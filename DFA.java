@@ -110,9 +110,9 @@ public class DFA {
 		
 		// find all pairs of states (p,q) such that final[p] != final[q]
 		for ( int statenum = 0; statenum < numstates; statenum++ )	{
-			//if ( !reachable[statenum] )	continue;
+			if ( !reachable[statenum] )	continue;
 			for ( int statenum2 = 0; statenum2 < numstates; statenum2++ )	{
-				//if ( !reachable[statenum2] )	continue;
+				if ( !reachable[statenum2] )	continue;
 				if ( finalstates[statenum] != finalstates[statenum2] )
 					mark[statenum][statenum2] = true;
 				else
@@ -128,7 +128,7 @@ public class DFA {
 		while ( flag )	{
 			flag = false;
 			for ( int x = 0; x < numstates; x++ )	{
-				//if ( !reachable[x] )	continue;
+				if ( !reachable[x] )	continue;
 				for ( int y = 0; y < numstates; y++ )	{
 					if ( x == y )	continue;
 					for ( int t = 0; t < numterminals; t++ )	{
@@ -141,8 +141,6 @@ public class DFA {
 			}// endfor first state
 		}// end while
 		
-		int numminimized = numstates;
-		int numminfinal = numfinalstates;
 		int minstates[] = new int[numstates];
 		for ( int state = 0; state < numstates; state++ )	{
 			visited[state] = false;
@@ -151,44 +149,56 @@ public class DFA {
 			else
 				minstates[state] = state;
 		}
+		
 		// extract the distinguishable states
 		for ( int state = 0; state < numstates; state++ )	{
-			if ( !reachable[state] || visited[state] )	continue;
+			if ( minstates[state] == -1 || visited[state] )	continue;
 			for ( int p = 0; p < numstates; p++ )	{
-				if ( p == state )	continue;
+				if ( p == state || minstates[p] == -1 )	continue;
 				if ( !mark[state][p] && !visited[p] )	{
 					minstates[p] = state;
 					visited[p] = true;
-					if ( finalstates[p] )
-						numminfinal--;
-					else
-						numminimized--;
 				}
 			}// endfor p
 		}// endfor state
 		
-		// update paths between states
-		for ( int u = 0; u < numstates; u++ )	{
-			for ( int t = 0; t < numterminals; t++ )	{
-				path[u][t] = minstates[path[u][t]];
-			}// endfor t
-		}// endfor u
-		
-		// make new data variables and update them to the proper values
-		int newpath[][] = new int[numminimized][numterminals];
-		boolean newfinal[] = new boolean[numminimized];
-		int mrow = 0;
-		for ( int row = 0; row < numstates; row++ )	{
-			if ( visited[row] )	continue;
-			for ( int t = 0; t < numterminals; t++ )	{
-				newpath[mrow][t] = path[row][t];
+		// set minstate to have all of the new minimized state numbers
+		int unique = 0;
+		for ( int x = 0; x < minstates.length; x++ )	{
+			if ( minstates[x] == x && minstates[x] != -1 )	{
+				for ( int y = 0; y < minstates.length; y++ )	{
+					if ( minstates[y] == x )	{
+						minstates[y] = unique;
+					}
+				}
+				unique++;
 			}
-			newfinal[mrow] = finalstates[row];
-			mrow++;
 		}
+		
+		// rearrange all the paths using the minstate array into a new path array
+		int newpath[][] = new int[numstates][numterminals];
+		boolean newfinal[] = new boolean[numstates];
+		int minstatecounter = 0, minfinalcounter = 0;
+		for ( int state = 0; state < numstates; state++ )	{
+			// find all accessible vertecies and vertecies that have not been counted already
+			if ( minstates[state] != -1 && minstatecounter <= minstates[state] )	{
+				for ( int t = 0; t < numterminals; t++ )	{
+					newpath[minstatecounter][t] = minstates[ path[state][t] ];
+				}
+				if ( finalstates[state] )	{
+					newfinal[minstatecounter] = true;
+					minfinalcounter++;
+				}
+				else	{
+					newfinal[minstatecounter] = false;
+				}
+				minstatecounter++;
+			}
+		}
+		
 		path = newpath;
-		numstates = numminimized;
-		numfinalstates = numminfinal;
+		numstates = minstatecounter;
+		numfinalstates = minfinalcounter;
 		finalstates = newfinal;
 	}
 }
