@@ -14,6 +14,18 @@ public class DFA {
 	private boolean finalstates[];
 	
 	// constructs a new DFA object from a file as per the in class specs
+    /*
+     * format of the input file:
+     * IntegerN - the number of terminal characters in the machine
+     * Terminal * N - all of the terminals separated by a space
+     * NumStates - number of states in the machine
+     *  - next is NumStates * IntegerN rows of transitions
+     * StartState TerminalTransitionChar EndState
+     * NumFinalStates - number of final states
+     * FinalStates - the final states of the machine separated by spaces
+     *
+     * Check the minmachine.txt file for a complete minimizable example.
+     */
 	DFA ( String filename )	{
 		BufferedReader infile = null;
 		numstates = 0;
